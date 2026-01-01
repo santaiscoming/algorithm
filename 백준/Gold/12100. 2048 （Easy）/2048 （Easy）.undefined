@@ -1,0 +1,114 @@
+use std::{
+    cmp::max,
+    fs::File,
+    io::{self, Read},
+    vec,
+};
+
+fn main() {
+    let Input {
+        n,
+        board,
+    } = get_inputs();
+
+    let mut result = 0;
+    dfs(0, board, &mut result);
+    println!("{}", result);
+
+    fn dfs(depth: usize, mut board: Vec<Vec<usize>>, result: &mut usize) {
+        if depth >= 5 {
+            *result = max(*result, find_max_block(&board));
+            return;
+        }
+
+        let mut current = board;
+        for _ in 0..4 {
+            let new_board = push_left(&current);
+            dfs(depth + 1, new_board, result);
+            current = rotate(&current);
+        }
+    }
+
+    fn rotate(board: &Vec<Vec<usize>>) -> Vec<Vec<usize>> {
+        let n = board.len();
+        (0..n)
+            .map(|y| {
+                (0..n)
+                    .map(|x| board[n - 1 - x][y])
+                    .collect()
+            })
+            .collect()
+    }
+
+    fn push_left(board: &Vec<Vec<usize>>) -> Vec<Vec<usize>> {
+        let n = board.len();
+        let mut result = vec![vec![0; n]; n];
+        for y in 0..n {
+            let row: Vec<usize> = board[y]
+                .iter()
+                .copied()
+                .filter(|&v| v != 0)
+                .collect();
+            let mut merged = Vec::new();
+            let mut i = 0;
+
+            while i < row.len() {
+                if i + 1 < row.len() && row[i] == row[i + 1] {
+                    merged.push(row[i] * 2);
+                    i += 2;
+                } else {
+                    merged.push(row[i]);
+                    i += 1;
+                }
+            }
+
+            for (i, &v) in merged.iter().enumerate() {
+                result[y][i] = v;
+            }
+        }
+        result
+    }
+
+    fn find_max_block(board: &Vec<Vec<usize>>) -> usize {
+        board
+            .iter()
+            .flatten()
+            .max()
+            .copied()
+            .unwrap()
+    }
+}
+
+struct Input {
+    n: usize,
+    board: Vec<Vec<usize>>,
+}
+
+fn get_inputs() -> Input {
+    let mut buf = String::new();
+    match File::open("input.txt") {
+        Ok(mut f) => f.read_to_string(&mut buf).unwrap(),
+        Err(_) => io::stdin()
+            .read_to_string(&mut buf)
+            .unwrap(),
+    };
+    let mut str = buf.lines();
+    let n = str
+        .next()
+        .unwrap()
+        .parse::<usize>()
+        .unwrap();
+    let board: Vec<Vec<usize>> = str
+        .take(n as usize)
+        .map(|line| {
+            line.split_whitespace()
+                .map(|v| v.parse::<usize>().unwrap())
+                .collect()
+        })
+        .collect();
+
+    Input {
+        n,
+        board,
+    }
+}
