@@ -1,0 +1,69 @@
+use std::{
+    fs::File,
+    io::{self, Read},
+};
+
+fn main() {
+    let Input {
+        n,
+        arr,
+        b,
+        c,
+    } = get_inputs();
+
+    let mut result = 0;
+    for v in arr {
+        result += 1;
+
+        if v > b {
+            let rest = v - b;
+            result += (rest + c - 1) / c;
+        }
+    }
+    println!("{result}");
+}
+
+struct Input {
+    n: usize,
+    arr: Vec<usize>,
+    b: usize,
+    c: usize,
+}
+
+fn get_inputs() -> Input {
+    let mut buf = String::new();
+    match File::open("input.txt") {
+        Ok(mut f) => f.read_to_string(&mut buf).unwrap(),
+        Err(_) => io::stdin()
+            .read_to_string(&mut buf)
+            .unwrap(),
+    };
+
+    let mut lines = buf.lines();
+    let n = lines
+        .next()
+        .unwrap()
+        .parse::<usize>()
+        .unwrap();
+    let arr: Vec<usize> = lines
+        .next()
+        .unwrap()
+        .split_whitespace()
+        .map(|v| v.parse::<usize>().unwrap())
+        .collect();
+    let [b, c] = lines
+        .next()
+        .unwrap()
+        .split_whitespace()
+        .map(|v| v.parse::<usize>().unwrap())
+        .collect::<Vec<_>>()
+        .try_into()
+        .unwrap();
+
+    Input {
+        n,
+        arr,
+        b,
+        c,
+    }
+}
