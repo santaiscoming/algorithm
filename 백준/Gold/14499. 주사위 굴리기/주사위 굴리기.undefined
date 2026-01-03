@@ -1,0 +1,114 @@
+use std::{
+    fs::File,
+    io::{self, Read},
+};
+
+fn main() {
+    let (first, og_dice_map, orders) = get_inputs();
+    let mut dice_map = og_dice_map;
+    let [n, m, x, y, k] = first;
+
+    let direction: [(i32, i32); 4] = [(0, 1), (0, -1), (-1, 0), (1, 0)];
+    let mut cur_pos = (x as i32, y as i32);
+    let mut side = [0; 3];
+    let mut updown = [0; 3];
+
+    for order in orders {
+        let (cx, cy) = cur_pos;
+        let (dx, dy) = direction[order - 1];
+        let (nx, ny) = (cx + dx, cy + dy);
+        if nx < 0 || nx >= n as i32 || ny < 0 || ny >= m as i32 {
+            continue;
+        }
+        cur_pos = (nx, ny);
+
+        turn(order, &mut side, &mut updown);
+
+        let center = side[1];
+        println!("{center}");
+
+        adjust_dice(&mut dice_map, cur_pos, &mut side, &mut updown);
+
+        fn turn(order: usize, side: &mut [i32; 3], updown: &mut [i32; 3]) {
+            match order {
+                1 => {
+                    let tmp = side[2];
+                    side.rotate_right(1);
+                    side[0] = updown[2];
+                    updown[2] = tmp;
+                }
+                2 => {
+                    let tmp = side[0];
+                    side.rotate_left(1);
+                    side[2] = updown[2];
+                    updown[2] = tmp;
+                }
+                3 => {
+                    let [t, b1, b2] = updown.clone();
+                    let c = side[1];
+                    side[1] = b1;
+                    updown[0] = c;
+                    updown[1] = b2;
+                    updown[2] = t;
+                }
+                4 => {
+                    let [t, b1, b2] = updown.clone();
+                    let c = side[1];
+                    side[1] = t;
+                    updown[0] = b2;
+                    updown[1] = c;
+                    updown[2] = b1;
+                }
+                _ => {}
+            }
+        }
+
+        fn adjust_dice(
+            dice_map: &mut Vec<Vec<usize>>,
+            cur_pos: (i32, i32),
+            side: &mut [i32; 3],
+            updown: &mut [i32; 3],
+        ) {
+            let (cx, cy) = cur_pos;
+            let footprint_num = dice_map[cx as usize][cy as usize];
+            if footprint_num == 0 {
+                dice_map[cx as usize][cy as usize] = updown[2] as usize
+            } else {
+                updown[2] = footprint_num as i32;
+                dice_map[cx as usize][cy as usize] = 0;
+            }
+        }
+    }
+}
+
+macro_rules! read_to_vec {
+    ($lines:expr) => {
+        $lines
+            .next()
+            .unwrap()
+            .split_whitespace()
+            .map(|v| v.parse::<usize>().unwrap())
+            .collect::<Vec<_>>()
+    };
+}
+
+fn get_inputs() -> ([usize; 5], Vec<Vec<usize>>, Vec<usize>) {
+    let mut buf = String::new();
+    match File::open("input.txt") {
+        Ok(mut f) => f.read_to_string(&mut buf).unwrap(),
+        Err(_) => io::stdin()
+            .read_to_string(&mut buf)
+            .unwrap(),
+    };
+
+    let mut lines = buf.lines();
+    let [n, m, x, y, k] = read_to_vec!(&mut lines)
+        .try_into()
+        .unwrap();
+    let nums = (0..n)
+        .map(|_| read_to_vec!(&mut lines))
+        .collect::<Vec<_>>();
+    let orders = read_to_vec!(&mut lines);
+
+    ([n, m, x, y, k], nums, orders)
+}
