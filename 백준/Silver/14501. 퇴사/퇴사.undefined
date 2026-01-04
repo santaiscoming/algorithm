@@ -1,0 +1,57 @@
+use std::{
+    fs::File,
+    io::{self, Read},
+};
+
+fn main() {
+    let (n, arr) = get_inputs();
+
+    let n = n as usize;
+    let mut dp = vec![0; n + 2];
+
+    for i in (0..n).rev() {
+        let [time, pay] = arr[i][..].try_into().unwrap();
+        let time = time as usize;
+
+        if i + time > n {
+            dp[i] = dp[i + 1];
+        } else {
+            dp[i] = dp[i + 1].max(pay + dp[i + time]);
+        }
+    }
+
+    println!("{}", dp[0]);
+}
+
+macro_rules! read_to_vec {
+    ($lines:expr) => {
+        $lines
+            .next()
+            .unwrap()
+            .split_whitespace()
+            .map(|v| v.parse::<i32>().unwrap())
+            .collect::<Vec<_>>()
+    };
+}
+
+fn get_inputs() -> (i32, Vec<Vec<i32>>) {
+    let mut buf = String::new();
+    match File::open("input.txt") {
+        Ok(mut f) => f.read_to_string(&mut buf).unwrap(),
+        Err(_) => io::stdin()
+            .read_to_string(&mut buf)
+            .unwrap(),
+    };
+
+    let mut lines = buf.lines();
+    let n = lines
+        .next()
+        .unwrap()
+        .parse::<i32>()
+        .unwrap();
+    let arr = (0..n)
+        .map(|_| read_to_vec!(lines))
+        .collect();
+
+    (n, arr)
+}
