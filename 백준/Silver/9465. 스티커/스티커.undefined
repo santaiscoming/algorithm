@@ -1,0 +1,74 @@
+use std::{
+    cmp::max,
+    fs::File,
+    io::{self, Read},
+    usize, vec,
+};
+
+macro_rules! read_from {
+    () => {{
+        let mut buf = String::new();
+        match File::open("input.txt") {
+            Ok(mut f) => f.read_to_string(&mut buf).unwrap(),
+            Err(_) => io::stdin()
+                .read_to_string(&mut buf)
+                .unwrap(),
+        };
+        Box::leak(buf.into_boxed_str()).split_ascii_whitespace()
+    }};
+}
+macro_rules! next {
+    ($tokens:expr) => {
+        $tokens.next().unwrap()
+    };
+
+    ($tokens:expr,$($t:ty),+) => {
+        ($($tokens.next().unwrap().parse::<$t>().unwrap()),+)
+    };
+}
+
+fn main() {
+    let mut tokens = read_from!();
+    let (t) = next!(&mut tokens, i32);
+    let tcs = (0..t)
+        .map(|_| {
+            let (n) = next!(&mut tokens, i32);
+            let mat = (0..2)
+                .map(|_| {
+                    (0..n)
+                        .map(|_| next!(&mut tokens, i32))
+                        .collect::<Vec<i32>>()
+                })
+                .collect::<Vec<Vec<i32>>>();
+
+            (n, mat)
+        })
+        .collect::<Vec<(i32, Vec<Vec<i32>>)>>();
+
+    for (n, arr) in tcs {
+        let n = n as usize;
+        let mut dp = vec![vec![0; n]; 2];
+
+        if n == 1 {
+            let result = max(arr[0][0], arr[1][0]);
+            println!("{result}");
+            continue;
+        }
+
+        dp[0][0] = arr[0][0];
+        dp[1][0] = arr[1][0];
+        dp[0][1] += dp[1][0] + arr[0][1];
+        dp[1][1] += dp[0][0] + arr[1][1];
+
+        for i in (2..n) {
+            let top = arr[0][i];
+            let bottom = arr[1][i];
+
+            dp[0][i] = max(dp[1][i - 1] + top, dp[1][i - 2] + top);
+            dp[1][i] = max(dp[0][i - 1] + bottom, dp[0][i - 2] + bottom);
+        }
+
+        let result = max(dp[0][n - 1], dp[1][n - 1]);
+        println!("{result}");
+    }
+}
