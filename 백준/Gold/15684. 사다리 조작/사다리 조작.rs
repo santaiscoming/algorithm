@@ -6,12 +6,12 @@ use std::{
 fn main() {
     let mut tokens = read!();
     let (n, m, h) = next!(&mut tokens, usize, usize, usize);
-    let infos = (0..m)
+    let info = (0..m)
         .map(|_| next!(&mut tokens, usize, usize))
         .collect::<Vec<_>>();
 
     let mut ladder = vec![vec![false; n + 1]; h + 1];
-    for &(a, b) in &infos {
+    for &(a, b) in &info {
         ladder[a][b] = true;
     }
 
@@ -25,16 +25,17 @@ fn main() {
 }
 
 fn check(ladder: &Vec<Vec<bool>>, n: usize, h: usize) -> bool {
-    for start in 1..=n {
-        let mut pos = start;
-        for row in 1..=h {
-            if pos < n && ladder[row][pos] {
-                pos += 1;
-            } else if pos > 1 && ladder[row][pos - 1] {
-                pos -= 1;
+    for sy in 1..=n {
+        let mut py = sy;
+        for x in 1..=h {
+            if py < n && ladder[x][py] {
+                py += 1;
+            } else if py > 1 && ladder[x][py - 1] {
+                py -= 1;
             }
         }
-        if pos != start {
+
+        if py != sy {
             return false;
         }
     }
@@ -45,37 +46,32 @@ fn dfs(
     ladder: &mut Vec<Vec<bool>>,
     n: usize,
     h: usize,
-    remain: usize,
-    start_row: usize,
-    start_col: usize,
+    cnt: usize,
+    sy: usize,
+    sx: usize,
 ) -> bool {
-    if remain == 0 {
+    if cnt == 0 {
         return check(ladder, n, h);
     }
 
-    for row in start_row..=h {
-        let col_start = if row == start_row {
-            start_col
+    for y in sy..=h {
+        let k = if y == sy {
+            sx
         } else {
             1
         };
-        for col in col_start..n {
-            if ladder[row][col] {
-                continue;
-            }
-            if col > 1 && ladder[row][col - 1] {
-                continue;
-            }
-            if col < n - 1 && ladder[row][col + 1] {
-                continue;
-            }
 
-            ladder[row][col] = true;
-            if dfs(ladder, n, h, remain - 1, row, col + 2) {
-                return true;
+        for x in k..n {
+            if [ladder[y][x], ladder[y][x - 1], ladder[y][x + 1]]
+                .iter()
+                .all(|&x| !x)
+            {
+                ladder[y][x] = true;
+                if dfs(ladder, n, h, cnt - 1, y, x + 2) {
+                    return true;
+                }
+                ladder[y][x] = false;
             }
-
-            ladder[row][col] = false;
         }
     }
     false
