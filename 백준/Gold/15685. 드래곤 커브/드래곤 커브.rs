@@ -38,17 +38,15 @@ fn main() {
             });
     }
 
-    let mut result = 0;
-    (0..100).for_each(|y| {
-        (0..100).for_each(|x| {
-            if [(x, y), (x + 1, y), (x, y + 1), (x + 1, y + 1)]
+    let result = (0..100)
+        .flat_map(|y| (0..100).map(move |x| (x, y)))
+        .filter(|&(x, y)| {
+            [(0, 0), (0, 1), (1, 0), (1, 1)]
                 .iter()
-                .all(|&(x, y)| set.contains(&(x, y)))
-            {
-                result += 1;
-            }
-        });
-    });
+                .all(|(dx, dy)| set.contains(&(dx + x, dy + y)))
+        })
+        .count();
+
     println!("{result}");
 }
 
