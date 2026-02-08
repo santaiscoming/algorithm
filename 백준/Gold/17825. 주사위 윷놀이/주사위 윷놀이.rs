@@ -42,58 +42,52 @@ fn main() {
         .map(|_| next!(&mut tokens, usize))
         .collect();
 
-    let mut result = 0;
     let mut horses = [0usize; 4];
-
-    dfs(0, &dice, &mut horses, 0, &mut result);
-
+    let result = dfs(0, 0, &dice, &mut horses);
     println!("{result}");
 }
 
 fn dfs(
     turn: usize,
-    dice: &[usize],
+    acc_score: usize,
+    dice: &Vec<usize>,
     horses: &mut [usize; 4],
-    score: usize,
-    ans: &mut usize,
-) {
+) -> usize {
     if turn == 10 {
-        *ans = (*ans).max(score);
-        return;
+        return acc_score;
     }
 
-    let steps = dice[turn];
+    let mut max_score = 0;
 
     for i in 0..4 {
-        let pos = horses[i];
-        if pos == END {
+        if horses[i] == END {
             continue;
         }
 
-        let mut dest = pos;
-        for step in 0..steps {
+        let mut dest = horses[i];
+        for step in 0..dice[turn] {
             if dest == END {
                 break;
             }
 
             if step == 0 {
-                dest = BLUE_NEXT[dest];
+                dest = BLUE_NEXT[dest]
             } else {
-                dest = NEXT[dest];
+                dest = NEXT[dest]
             }
         }
-
         if dest != END && horses.contains(&dest) {
             continue;
         }
 
         let prev = horses[i];
         horses[i] = dest;
-
-        dfs(turn + 1, dice, horses, score + SCORE[dest], ans);
-
+        max_score =
+            max_score.max(dfs(turn + 1, acc_score + SCORE[dest], dice, horses));
         horses[i] = prev;
     }
+
+    max_score
 }
 
 #[macro_export]
