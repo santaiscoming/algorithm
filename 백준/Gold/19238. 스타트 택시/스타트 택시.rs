@@ -16,25 +16,60 @@ fn main() {
                 .collect()
         })
         .collect();
-    let (mut cr, mut cc) = next!(&mut tokens, usize, usize);
-    cr -= 1;
-    cc -= 1;
-    let mut customers: Vec<Option<(usize, usize, usize, usize)>> = (0..m)
-        .map(|_| {
-            let (r, c, tr, tc) = next!(&mut tokens, usize, usize, usize, usize);
-            Some((r - 1, c - 1, tr - 1, tc - 1))
-        })
-        .collect();
+
+    let mut tr = next!(&mut tokens, usize) - 1;
+    let mut tc = next!(&mut tokens, usize) - 1;
+
+    let mut customers = Vec::new();
+    let mut customer_map = vec![vec![None; n]; n];
+    for i in 0..m {
+        let (sr, sc, dr, dc) = next!(&mut tokens, usize, usize, usize, usize);
+        customers.push((sr - 1, sc - 1, dr - 1, dc - 1));
+        customer_map[sr - 1][sc - 1] = Some(i);
+    }
 
     for _ in 0..m {
-        match bfs(cr, cc, &mut fuel, &grid, &mut customers) {
-            Some((nr, nc)) => {
-                cr = nr;
-                cc = nc;
-            }
+        let target = find_customer(n, tr, tc, &grid, &customer_map);
+
+        match target {
             None => {
                 println!("-1");
                 return;
+            }
+            Some((dist, idx)) => {
+                if fuel < dist as i32 {
+                    println!("-1");
+                    return;
+                }
+
+                fuel -= dist as i32;
+                tr = customers[idx].0;
+                tc = customers[idx].1;
+                customer_map[tr][tc] = None;
+
+                let dest_r = customers[idx].2;
+                let dest_c = customers[idx].3;
+
+                let dist = get_dist(n, tr, tc, dest_r, dest_c, &grid);
+
+                match dist {
+                    None => {
+                        println!("-1");
+                        return;
+                    }
+                    Some(d) => {
+                        if fuel < d as i32 {
+                            println!("-1");
+                            return;
+                        }
+
+                        fuel -= d as i32;
+                        fuel += (d * 2) as i32;
+
+                        tr = dest_r;
+                        tc = dest_c;
+                    }
+                }
             }
         }
     }
@@ -42,55 +77,51 @@ fn main() {
     println!("{}", fuel);
 }
 
-fn bfs(
+fn find_customer(
+    n: usize,
     sr: usize,
     sc: usize,
-    fuel: &mut i32,
     grid: &Vec<Vec<usize>>,
-    customers: &mut Vec<Option<(usize, usize, usize, usize)>>,
+    map: &Vec<Vec<Option<usize>>>,
 ) -> Option<(usize, usize)> {
-    let n = grid.len();
+    if let Some(idx) = map[sr][sc] {
+        return Some((0, idx));
+    }
 
-    let mut dist = vec![vec![-1i32; n]; n];
-    dist[sr][sc] = 0;
-
+    let mut visited = vec![vec![false; n]; n];
     let mut q = VecDeque::new();
-    q.push_back((sr, sc));
 
-    let mut candidates: Vec<(usize, usize, usize)> = Vec::new();
-    let mut found_dist = -1i32;
+    visited[sr][sc] = true;
+    q.push_back((sr, sc, 0));
 
-    while let Some((cr, cc)) = q.pop_front() {
-        let cur_dist = dist[cr][cc];
+    let mut candidates = Vec::new();
+    let mut min_dist = usize::MAX;
 
-        if found_dist >= 0 && cur_dist > found_dist {
+    while let Some((r, c, dist)) = q.pop_front() {
+        if dist > min_dist {
             break;
         }
 
-        for (i, c) in customers.iter().enumerate() {
-            if let Some((r, col, _, _)) = c {
-                if *r == cr && *col == cc {
-                    candidates.push((*r, *col, i));
-                    found_dist = cur_dist;
-                }
-            }
-        }
-
-        if found_dist >= 0 {
-            continue;
-        }
-
         for (dr, dc) in DIRECTIONS {
-            let nr = cr as i32 + dr;
-            let nc = cc as i32 + dc;
+            let nr = r.wrapping_add(dr as usize);
+            let nc = c.wrapping_add(dc as usize);
 
-            if nr >= 0 && nr < n as i32 && nc >= 0 && nc < n as i32 {
-                let nr = nr as usize;
-                let nc = nc as usize;
+            if nr < n && nc < n {
+                if !visited[nr][nc] && grid[nr][nc] != 1 {
+                    visited[nr][nc] = true;
 
-                if dist[nr][nc] == -1 && grid[nr][nc] == 0 {
-                    dist[nr][nc] = cur_dist + 1;
-                    q.push_back((nr, nc));
+                    let next_dist = dist + 1;
+
+                    if let Some(idx) = map[nr][nc] {
+                        if next_dist <= min_dist {
+                            min_dist = next_dist;
+                            candidates.push((nr, nc, idx));
+                        }
+                    }
+
+                    if next_dist < min_dist {
+                        q.push_back((nr, nc, next_dist));
+                    }
                 }
             }
         }
@@ -100,48 +131,45 @@ fn bfs(
         return None;
     }
 
-    candidates.sort();
-    let (_, _, idx) = candidates[0];
+    candidates.sort_unstable();
 
-    let customer = customers[idx].unwrap();
-    let (pr, pc, tr, tc) = customer;
+    Some((min_dist, candidates[0].2))
+}
 
-    *fuel -= found_dist;
-    if *fuel < 0 {
-        return None;
+fn get_dist(
+    n: usize,
+    sr: usize,
+    sc: usize,
+    dr: usize,
+    dc: usize,
+    grid: &Vec<Vec<usize>>,
+) -> Option<usize> {
+    if sr == dr && sc == dc {
+        return Some(0);
     }
 
-    customers[idx] = None;
+    let mut visited = vec![vec![false; n]; n];
+    let mut q = VecDeque::new();
 
-    let mut dist2 = vec![vec![-1i32; n]; n];
-    dist2[pr][pc] = 0;
+    visited[sr][sc] = true;
+    q.push_back((sr, sc, 0));
 
-    let mut q2 = VecDeque::new();
-    q2.push_back((pr, pc));
-
-    while let Some((cr, cc)) = q2.pop_front() {
-        let cur_dist = dist2[cr][cc];
-
-        if cr == tr && cc == tc {
-            *fuel -= cur_dist;
-            if *fuel < 0 {
-                return None;
-            }
-            *fuel += cur_dist * 2;
-            return Some((tr, tc));
+    while let Some((r, c, dist)) = q.pop_front() {
+        if r == dr && c == dc {
+            return Some(dist);
         }
 
         for (dr, dc) in DIRECTIONS {
-            let nr = cr as i32 + dr;
-            let nc = cc as i32 + dc;
+            let nr = r.wrapping_add(dr as usize);
+            let nc = c.wrapping_add(dc as usize);
 
-            if nr >= 0 && nr < n as i32 && nc >= 0 && nc < n as i32 {
+            if nr < n && nc < n {
                 let nr = nr as usize;
                 let nc = nc as usize;
 
-                if dist2[nr][nc] == -1 && grid[nr][nc] == 0 {
-                    dist2[nr][nc] = cur_dist + 1;
-                    q2.push_back((nr, nc));
+                if !visited[nr][nc] && grid[nr][nc] != 1 {
+                    visited[nr][nc] = true;
+                    q.push_back((nr, nc, dist + 1));
                 }
             }
         }
