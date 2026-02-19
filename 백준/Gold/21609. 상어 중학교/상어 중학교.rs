@@ -1,11 +1,11 @@
 use std::{
+    cmp::Reverse,
     collections::VecDeque,
     fs::File,
     io::{self, Read},
 };
 
 const EMPTY: i32 = -2;
-const BLACK: i32 = -1;
 const RAINBOW: i32 = 0;
 const DIRECTIONS: [(i32, i32); 4] = [(-1, 0), (0, 1), (1, 0), (0, -1)];
 
@@ -25,175 +25,139 @@ fn main() {
     let mut score = 0;
 
     loop {
-        match find_largest_group(&grid) {
-            None => break,
-            Some((cells, _)) => {
-                let cnt = cells.len();
-                score += (cnt * cnt) as i32;
-                for (r, c) in &cells {
-                    grid[*r][*c] = EMPTY;
+        let mut normal_block_visited = vec![vec![false; n]; n];
+        let mut groups = Vec::new();
+
+        for r in 0..n {
+            for c in 0..n {
+                if grid[r][c] > 0 && !normal_block_visited[r][c] {
+                    match find_group_bfs(
+                        r,
+                        c,
+                        &mut grid,
+                        &mut normal_block_visited,
+                    ) {
+                        None => continue,
+                        Some(v) => {
+                            groups.push(v);
+                        }
+                    }
                 }
             }
         }
+
+        if groups.len() < 1 {
+            break;
+        }
+
+        groups.sort_by_key(|&(total, a, b, c, _, _)| {
+            (Reverse(total), Reverse(a), Reverse(b), Reverse(c))
+        });
+        let (_, _, _, _, rainbows, blocks) = &groups[0];
+        score += remove_blocks(&rainbows, &blocks, &mut grid);
 
         gravity(&mut grid);
         rotate(&mut grid);
         gravity(&mut grid);
     }
-
     println!("{}", score);
 }
 
-fn bfs_group(
+fn find_group_bfs(
     sr: usize,
     sc: usize,
     grid: &Grid,
-    visited: &mut Vec<Vec<bool>>,
-) -> Option<(Vec<(usize, usize)>, usize, (usize, usize))> {
+    normal_block_visited: &mut Vec<Vec<bool>>,
+) -> Option<(
+    usize,
+    usize,
+    usize,
+    usize,
+    Vec<(usize, usize)>,
+    Vec<(usize, usize)>,
+)> {
     let n = grid.len();
-    let color = grid[sr][sc];
-
-    if color <= 0 || color == EMPTY {
-        return None;
-    }
-    if visited[sr][sc] {
-        return None;
-    }
-
+    let ref_block = grid[sr][sc];
+    let mut visited = vec![vec![false; n]; n];
     let mut q = VecDeque::new();
-    let mut cells = Vec::new();
-    let mut rainbow = Vec::new();
+    let mut rainbows = Vec::new();
+    let mut blocks = Vec::new();
 
-    let mut l_visited = vec![vec![false; n]; n];
-
-    q.push_back((sr, sc));
+    normal_block_visited[sr][sc] = true;
     visited[sr][sc] = true;
-    l_visited[sr][sc] = true;
+    q.push_back((sr, sc));
+    blocks.push((sr, sc));
 
-    while let Some((r, c)) = q.pop_front() {
-        cells.push((r, c));
-        if grid[r][c] == RAINBOW {
-            rainbow.push((r, c));
-        }
-
+    while let Some((cr, cc)) = q.pop_front() {
         for (dr, dc) in DIRECTIONS {
-            let nr = r.wrapping_add(dr as usize);
-            let nc = c.wrapping_add(dc as usize);
+            let nr = cr.wrapping_add(dr as usize);
+            let nc = cc.wrapping_add(dc as usize);
 
-            if nr < n && nc < n {
-                let nr = nr as usize;
-                let nc = nc as usize;
-                if l_visited[nr][nc] {
-                    continue;
+            if nr < n
+                && nc < n
+                && grid[nr][nc] >= 0
+                && (grid[nr][nc] == ref_block || grid[nr][nc] == RAINBOW)
+                && !visited[nr][nc]
+            {
+                if grid[nr][nc] == RAINBOW {
+                    rainbows.push((nr, nc));
+                } else {
+                    blocks.push((nr, nc));
+                    normal_block_visited[nr][nc] = true
                 }
-                let v = grid[nr][nc];
 
-                if v == color || v == RAINBOW {
-                    l_visited[nr][nc] = true;
-                    if v == color {
-                        visited[nr][nc] = true;
-                    }
-                    q.push_back((nr, nc));
-                }
+                visited[nr][nc] = true;
+                q.push_back((nr, nc));
             }
         }
     }
 
-    let cnt = cells
-        .iter()
-        .filter(|&&(r, c)| grid[r][c] != RAINBOW)
-        .count();
-    if cnt < 1 {
+    if blocks.len() < 1 || (blocks.len() + rainbows.len()) < 2 {
         return None;
     }
 
-    if cells.len() < 2 {
-        return None;
-    }
+    blocks.sort();
+    let (ref_r, ref_c) = blocks[0];
 
-    let rainbow_cnt = rainbow.len();
-
-    let base = cells
-        .iter()
-        .filter(|&&(r, c)| grid[r][c] != RAINBOW)
-        .min()
-        .copied()
-        .unwrap();
-
-    Some((cells, rainbow_cnt, base))
+    Some((
+        rainbows.len() + blocks.len(),
+        rainbows.len(),
+        ref_r,
+        ref_c,
+        rainbows,
+        blocks,
+    ))
 }
 
-fn find_largest_group(
-    grid: &Grid,
-) -> Option<(Vec<(usize, usize)>, (usize, usize))> {
-    let n = grid.len();
-    let mut visited = vec![vec![false; n]; n];
-    let mut best: Option<(usize, usize, (usize, usize), Vec<(usize, usize)>)> =
-        None;
-
-    for r in 0..n {
-        for c in 0..n {
-            if let Some((cells, rainbow_cnt, base)) =
-                bfs_group(r, c, grid, &mut visited)
-            {
-                let key = (cells.len(), rainbow_cnt, base.0, base.1);
-                let candidate = match &best {
-                    None => true,
-                    Some((sz, rc, base_pos, _)) => {
-                        if key.0 != *sz {
-                            key.0 > *sz
-                        } else if key.1 != *rc {
-                            key.1 > *rc
-                        } else if key.2 != base_pos.0 {
-                            key.2 > base_pos.0
-                        } else {
-                            key.3 > base_pos.1
-                        }
-                    }
-                };
-
-                if candidate {
-                    best = Some((key.0, key.1, (key.2, key.3), cells));
-                }
-            }
-        }
+fn remove_blocks(
+    rainbows: &Vec<(usize, usize)>,
+    blocks: &Vec<(usize, usize)>,
+    grid: &mut Grid,
+) -> usize {
+    for &(r, c) in rainbows {
+        grid[r][c] = EMPTY;
+    }
+    for &(r, c) in blocks {
+        grid[r][c] = EMPTY;
     }
 
-    best.map(|(_, _, base, cells)| (cells, base))
+    let result = rainbows.len() + blocks.len();
+    result * result
 }
 
 fn gravity(grid: &mut Grid) {
     let n = grid.len();
+
     for c in 0..n {
-        let mut empty_r = n as i32 - 1;
-
-        while empty_r >= 0 && grid[empty_r as usize][c] != EMPTY {
-            empty_r -= 1;
-        }
-
-        let mut cur = empty_r - 1;
-        while cur >= 0 {
-            let cv = grid[cur as usize][c];
-            if cv == BLACK {
-                empty_r = cur - 1;
-
-                while empty_r >= 0 && grid[empty_r as usize][c] != EMPTY {
-                    empty_r -= 1;
-                }
-
-                cur = empty_r - 1;
-            } else if cv != EMPTY {
-                grid[empty_r as usize][c] = cv;
-                grid[cur as usize][c] = EMPTY;
-                empty_r -= 1;
-
-                while empty_r >= 0 && grid[empty_r as usize][c] != EMPTY {
-                    empty_r -= 1;
-                }
-
-                cur -= 1;
-            } else {
-                cur -= 1;
+        for r in (0..n - 1).rev() {
+            let mut sr = r;
+            while sr < n - 1
+                && grid[sr][c] >= RAINBOW
+                && grid[sr + 1][c] == EMPTY
+            {
+                grid[sr + 1][c] = grid[sr][c];
+                grid[sr][c] = EMPTY;
+                sr += 1
             }
         }
     }
@@ -205,9 +169,10 @@ fn rotate(grid: &mut Grid) {
 
     for r in 0..n {
         for c in 0..n {
-            new_grid[n - 1 - c][r] = grid[r][c];
+            new_grid[r][c] = grid[c][r];
         }
     }
+    new_grid.reverse();
 
     *grid = new_grid;
 }
