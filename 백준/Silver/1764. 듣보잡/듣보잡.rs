@@ -15,13 +15,16 @@ fn main() {
         .map(|_| next!(&mut tokens, String))
         .collect::<HashSet<_>>();
 
-    let mut intersec = not_listen.intersection(&not_see).collect::<Vec<_>>();
+    let mut intersec = not_listen
+        .intersection(&not_see)
+        .cloned()
+        .collect::<Vec<_>>();
     intersec.sort_unstable();
 
     println!("{}", intersec.len());
-    intersec.iter().for_each(|v| {
-        println!("{}", v);
-    });
+    for name in intersec {
+        println!("{}", name);
+    }
 }
 
 #[macro_export]
