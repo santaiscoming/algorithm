@@ -13,27 +13,22 @@ fn main() {
 
     let mut table = HashMap::new();
     for v in cards {
-        if let None = table.get(&v) {
-            table.insert(v, v);
-        }
+        table.entry(v).or_insert(true);
     }
 
     let mut result = Vec::new();
     for v in targets {
-        if table.contains_key(&v) {
-            result.push(1);
-        } else {
-            result.push(0);
-        }
+        table
+            .entry(v)
+            .and_modify(|_| {
+                result.push("1");
+            })
+            .or_insert_with(|| {
+                result.push("0");
+                true
+            });
     }
-    println!(
-        "{}",
-        result
-            .iter()
-            .map(|v| v.to_string())
-            .collect::<Vec<_>>()
-            .join(" ")
-    );
+    println!("{}", result.join(" "));
 }
 
 #[macro_export]
