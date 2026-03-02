@@ -9,22 +9,22 @@ fn main() {
     let (n, k) = next!(&mut tokens, usize, i64);
     let nums = (0..n).map(|_| next!(&mut tokens, i64)).collect::<Vec<_>>();
 
+    let mut result = 0;
+    let mut acc = 0;
     let mut counter: HashMap<i64, i64> = HashMap::new();
     counter.insert(0, 1);
 
-    let mut sum: i64 = 0;
-    let mut answer: i64 = 0;
+    for num in nums {
+        acc += num;
 
-    for &num in &nums {
-        sum += num;
-        if let Some(&cnt) = counter.get(&(sum - k)) {
-            answer += cnt;
+        if let Some(v) = counter.get(&(acc - k)) {
+            result += v
         }
 
-        counter.entry(sum).and_modify(|v| *v += 1).or_insert(1);
+        counter.entry(acc).and_modify(|v| *v += 1).or_insert(1);
     }
 
-    println!("{}", answer);
+    println!("{}", result);
 }
 
 #[macro_export]
