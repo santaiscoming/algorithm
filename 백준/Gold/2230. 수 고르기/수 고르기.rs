@@ -18,10 +18,11 @@ fn main() {
         while left <= right {
             let mid = (right + left) / 2;
             let diff = nums[mid] - cur;
+
             if diff < m {
                 left = mid + 1;
-            } else if diff >= m {
-                if min_diff > diff {
+            } else {
+                if diff < min_diff {
                     min_diff = diff;
                 }
 
