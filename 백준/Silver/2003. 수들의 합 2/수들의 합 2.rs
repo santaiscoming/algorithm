@@ -1,7 +1,6 @@
 use std::{
     fs::File,
     io::{self, Read},
-    usize, vec,
 };
 
 fn main() {
@@ -9,28 +8,25 @@ fn main() {
     let (n, m) = next!(&mut tokens, usize, usize);
     let nums: Vec<_> = (0..n).map(|_| next!(&mut tokens, usize)).collect();
 
-    let mut prefix = vec![0; n + 1];
-    for i in 1..n + 1 {
-        prefix[i] = prefix[i - 1] + nums[i - 1]
-    }
-
+    let mut l = 0;
+    let mut r = 0;
+    let mut sum = 0;
     let mut result = 0;
-    for s in 0..=n {
-        let mut l = s + 1;
-        let mut r = n;
 
-        while l <= r {
-            let mid = (l + r) / 2;
-            let target = prefix[mid] - prefix[s];
-
-            if target == m {
+    loop {
+        if sum >= m {
+            if sum == m {
                 result += 1;
-                break;
-            } else if target > m {
-                r = mid - 1
-            } else {
-                l = mid + 1
             }
+
+            sum -= nums[l];
+            l += 1;
+        } else {
+            if r == n {
+                break;
+            }
+            sum += nums[r];
+            r += 1;
         }
     }
     println!("{}", result)
