@@ -16,7 +16,7 @@ fn main() {
 
     let mut result = 0;
     for s in 0..=n {
-        let mut l = s;
+        let mut l = s + 1;
         let mut r = n;
 
         while l <= r {
