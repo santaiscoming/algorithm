@@ -15,14 +15,14 @@ fn main() {
     let mut set = vec![false; 100001];
 
     while l < n {
-        while r < n && !set[nums[r]] {
+        if r < n && !set[nums[r]] {
             set[nums[r]] = true;
             r += 1;
+        } else {
+            result += r - l;
+            set[nums[l]] = false;
+            l += 1;
         }
-
-        result += r - l;
-        set[nums[l]] = false;
-        l += 1;
     }
 
     println!("{}", result);
