@@ -8,19 +8,20 @@ fn main() {
     let (n, k) = next!(&mut tokens, usize, usize);
     let nums: Vec<_> = (0..n).map(|_| next!(&mut tokens, usize)).collect();
 
-    let mut cnt = vec![0usize; 100_001];
     let mut l = 0;
+    let mut r = 0;
+    let mut count = vec![0; 100_001];
     let mut result = 0;
 
-    for r in 0..n {
-        cnt[nums[r]] += 1;
-
-        while cnt[nums[r]] > k {
-            cnt[nums[l]] -= 1;
+    while l <= r && l < n {
+        if r < n && count[nums[r]] < k {
+            count[nums[r]] += 1;
+            r += 1;
+            result = result.max(r - l);
+        } else {
+            count[nums[l]] -= 1;
             l += 1;
         }
-
-        result = result.max(r - l + 1);
     }
 
     println!("{}", result);
