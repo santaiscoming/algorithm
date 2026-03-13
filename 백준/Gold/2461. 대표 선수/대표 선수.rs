@@ -1,7 +1,6 @@
 use std::{
     fs::File,
     io::{self, Read},
-    usize,
 };
 
 fn main() {
@@ -11,7 +10,6 @@ fn main() {
         .map(|_| (0..m).map(|_| next!(&mut tokens, usize)).collect())
         .collect();
 
-    let nm = n * m;
     let mut students: Vec<(usize, usize)> = Vec::new();
     for c in 0..n {
         for s in 0..m {
@@ -20,42 +18,26 @@ fn main() {
     }
     students.sort_by_key(|&(s, _)| s);
 
+    let mut l = 0;
+    let mut result = usize::MAX;
     let mut count = vec![0; n + 1];
     let mut selected_class_cnt = 0;
 
-    let mut l = 0;
-    let mut r = 0;
-    let mut result = usize::MAX;
+    for r in 0..students.len() {
+        let (rs, rc) = students[r];
+        if count[rc] == 0 {
+            selected_class_cnt += 1;
+        }
 
-    while l <= r && l < nm {
-        let (ls, lc) = students[l];
+        count[rc] += 1;
 
-        if r < nm && selected_class_cnt < n {
-            let (rs, rc) = students[r];
-            if count[rc] == 0 {
-                selected_class_cnt += 1;
-            }
-
-            if selected_class_cnt == n {
-                result = result.min(rs - ls);
-            }
-
-            count[rc] += 1;
-            r += 1;
-        } else {
-            if selected_class_cnt == n {
-                let rs = if r == nm {
-                    students[nm - 1].0
-                } else {
-                    students[r - 1].0
-                };
-                result = result.min(rs - ls);
-            }
+        while selected_class_cnt == n {
+            let (ls, lc) = students[l];
+            result = result.min(rs - ls);
 
             if count[lc] == 1 {
                 selected_class_cnt -= 1;
             }
-
             count[lc] -= 1;
             l += 1;
         }
