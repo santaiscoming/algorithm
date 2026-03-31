@@ -7,15 +7,17 @@ fn main() {
     let mut tokens = read!();
     let mut s: Vec<char> = next!(&mut tokens, String).chars().collect();
 
-    let mut res = d_p(&s);
     let n = s.len();
+    let mut dp = vec![vec![-1; n]; n];
+    let mut res = recur(0, n - 1, &s, &mut dp);
 
-    for a in 0..n {
-        for b in (a + 1)..n {
-            if s[a] != s[b] {
-                s.swap(a, b);
-                res = res.min(d_p(&s) + 1);
-                s.swap(a, b);
+    for i in 0..n {
+        for j in i + 1..n {
+            if s[i] != s[j] {
+                s.swap(i, j);
+                let mut dp = vec![vec![-1; n]; n];
+                res = res.min(recur(0, n - 1, &s, &mut dp) + 1);
+                s.swap(i, j);
             }
         }
     }
@@ -23,28 +25,22 @@ fn main() {
     println!("{}", res);
 }
 
-fn d_p(s: &Vec<char>) -> usize {
-    let n = s.len();
-    if n <= 1 {
+fn recur(l: usize, r: usize, s: &Vec<char>, dp: &mut Vec<Vec<i64>>) -> i64 {
+    if l >= r {
         return 0;
     }
 
-    let mut dp = vec![vec![0usize; n]; n];
-
-    for len in 2..=n {
-        for i in 0..=n - len {
-            let j = i + len - 1;
-            if s[i] == s[j] {
-                dp[i][j] = if len == 2 { 0 } else { dp[i + 1][j - 1] };
-            } else {
-                let del_left = dp[i + 1][j];
-                let del_right = dp[i][j - 1];
-                let replace = if len == 2 { 0 } else { dp[i + 1][j - 1] };
-                dp[i][j] = del_left.min(del_right).min(replace) + 1;
-            }
-        }
+    if dp[l][r] != -1 {
+        return dp[l][r];
     }
-    dp[0][n - 1]
+
+    let left = recur(l + 1, r, s, dp) + 1;
+    let right = recur(l, r - 1, s, dp) + 1;
+    let both = recur(l + 1, r - 1, s, dp) + if s[l] == s[r] { 0 } else { 1 };
+
+    dp[l][r] = left.min(right).min(both);
+
+    dp[l][r]
 }
 
 #[macro_export]
