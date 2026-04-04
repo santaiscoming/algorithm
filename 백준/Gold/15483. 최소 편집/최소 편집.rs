@@ -13,8 +13,8 @@ fn main() {
     let m = b.len();
     let mut dp = vec![vec![-1; m + 1]; n + 1];
     let res = recur(
-        n,
-        m,
+        0,
+        0,
         &a.chars().collect::<Vec<_>>(),
         &b.chars().collect::<Vec<_>>(),
         &mut dp,
@@ -29,11 +29,13 @@ fn recur(
     b: &Vec<char>,
     dp: &mut Vec<Vec<i32>>,
 ) -> i32 {
-    if i == 0 {
-        return j as i32;
+    let n = a.len();
+    let m = b.len();
+    if i == n {
+        return (m - j) as i32;
     }
-    if j == 0 {
-        return i as i32;
+    if j == m {
+        return (n - i) as i32;
     }
 
     if dp[i][j] != -1 {
@@ -41,17 +43,17 @@ fn recur(
     }
 
     let mut ret = 0i32;
-    if a[i - 1] != b[j - 1] {
-        let ins = recur(i - 1, j, a, b, dp);
-        let del = recur(i, j - 1, a, b, dp);
-        let trade = recur(i - 1, j - 1, a, b, dp);
-
-        ret = ins.min(del).min(trade) + 1
+    if a[i] == b[j] {
+        ret = recur(i + 1, j + 1, a, b, dp);
     } else {
-        ret = recur(i - 1, j - 1, a, b, dp);
-    }
+        let ins = recur(i + 1, j, a, b, dp);
+        let del = recur(i, j + 1, a, b, dp);
+        let rep = recur(i + 1, j + 1, a, b, dp);
 
+        ret = ins.min(del).min(rep) + 1;
+    }
     dp[i][j] = ret;
+
     ret
 }
 
