@@ -1,5 +1,6 @@
 use std::{
     fs::File,
+    i64,
     io::{self, Read},
 };
 
@@ -8,11 +9,10 @@ fn main() {
     let n = next!(&mut tokens, usize);
     let arr = (0..n).map(|_| next!(&mut tokens, i64)).collect::<Vec<_>>();
 
-    let inf = 1_i64 << 60;
     let mut p = 0i64;
     let mut me = 0i64;
-    let mut mo = inf;
-    let mut ans = -inf;
+    let mut mo = i64::MAX;
+    let mut ans = i64::MIN;
 
     for i in 1..=n {
         let x = arr[i - 1];
@@ -23,7 +23,7 @@ fn main() {
         }
 
         ans = ans.max(p - me);
-        if mo < inf {
+        if mo < i64::MAX {
             ans = ans.max(-p - mo);
         }
 
