@@ -1,25 +1,17 @@
 def solution(n, w, num):
-    container = [[] for _ in range(w)]
-    v = 0
-    flag = True
-    while v < n:
-        if flag:
-            for i in range(w):
-                container[i].append(v)
-                v += 1
-                if v == n:
-                    break
-            flag = False
-        else:
-            for i in range(w - 1, -1, -1):
-                container[i].append(v)
-                v += 1
-                if v == n:
-                    break
-            flag = True
-        
     num = num - 1
-    for arr in container:
-        if num in arr:
-            i = arr.index(num)
-            return len(arr) - i
+    ans = 0
+    
+    tr = num // w
+    tc = num - tr * w if tr % 2 == 0 else (w - 1) - (num - tr * w)
+    
+    for v in range(n):
+        r = v // w
+        c = v - r * w if r % 2 == 0 else (w - 1) - (v - r * w)
+        
+        if tc == c :
+            ans += 1
+            
+    return ans - tr
+        
+    
