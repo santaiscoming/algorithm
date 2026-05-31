@@ -1,26 +1,28 @@
 def solution(info, n, m):
     INF = float('inf')
+    l = len(info)
     
-    dp = [INF] * m
-    dp[0] = 0
+    memo = [[-1] * m for _ in range(l)]
     
-    for a_cst, b_cst in info:
-        n_dp = [INF] * m
+    def recur(depth, b_acc):
+        if b_acc >= m:
+            return INF
+            
+        if depth == l:
+            return 0
+            
+        if memo[depth][b_acc] != -1:
+            return memo[depth][b_acc]
+            
+        a_cst, b_cst = info[depth]
         
-        for cur_b in range(m):
-            if dp[cur_b] == INF:
-                continue
-                
-            nxt_a = dp[cur_b] + a_cst
-            if nxt_a < n:
-                n_dp[cur_b] = min(n_dp[cur_b], nxt_a)
-                
-            nxt_b = cur_b + b_cst
-            if nxt_b < m:
-                n_dp[nxt_b] = min(n_dp[nxt_b], dp[cur_b])
-                
-        dp = n_dp
+        pick_a = recur(depth + 1, b_acc) + a_cst
+        pick_b = recur(depth + 1, b_acc + b_cst)
         
-    res = min(dp)
+        memo[depth][b_acc] = min(pick_a, pick_b)
+        
+        return memo[depth][b_acc]
+        
+    res = recur(0, 0)
     
-    return res if res < INF else -1
+    return res if res < n else -1
