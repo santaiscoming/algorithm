@@ -1,16 +1,24 @@
+from collections import deque
 def solution(players, m, k):
-    cnt = 0
-    cur = 0
-    exp = [0] * 48
+    ans = 0
+    server = deque()
     
-    for t in range(24):
-        cur -= exp[t]
-        req = players[t] // m
+    for player in players:
+        curr_cap = (len(server) + 1) * m
         
-        if req > cur:
-            add = req - cur
-            cnt += add
-            cur += add
-            exp[t + k] += add
+        if player >= curr_cap:
+            inc = ((player - curr_cap) // m) + 1
+            ans += inc
+            for _ in range(inc):
+                server.append(k)
             
-    return cnt
+        remove = 0
+        for i, s in enumerate(server):
+            server[i] -= 1
+            if server[i] == 0:
+                remove += 1
+        
+        for _ in range(remove):
+            server.popleft()
+                    
+    return ans
