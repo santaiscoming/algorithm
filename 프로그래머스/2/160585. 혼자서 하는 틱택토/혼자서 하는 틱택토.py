@@ -1,39 +1,35 @@
 def solution(board):
-    board = [list(row) for row in board]
-
-    o_cnt = sum(row.count('O') for row in board)
-    x_cnt = sum(row.count('X') for row in board)
-
-    if not (o_cnt == x_cnt or o_cnt == x_cnt + 1):
+    o_cnt = 0
+    x_cnt = 0
+    for r in range(3):
+        for c in range(3):
+            if board[r][c] == 'O':
+                o_cnt += 1
+            if board[r][c] == 'X':
+                x_cnt += 1
+    
+    if x_cnt > o_cnt:
         return 0
-
-    o_win = win(board, 'O')
-    x_win = win(board, 'X')
-
-    if o_win and x_win:
+    if o_cnt - 1 > x_cnt:
         return 0
-
-    if o_win and o_cnt != x_cnt + 1:
+    
+    for r in range(3):
+        if all([board[r][c] == 'O' for c in range(3)]) and x_cnt >= o_cnt:
+            return 0
+        if all([board[r][c] == 'X' for c in range(3)]) and x_cnt < o_cnt:
+            return 0
+        if all([board[c][r] == 'O' for c in range(3)]) and x_cnt >= o_cnt:
+            return 0
+        if all([board[c][r] == 'X' for c in range(3)]) and x_cnt < o_cnt:
+            return 0
+        
+    if all([board[c][c] == 'O' for c in range(3)]) and x_cnt >= o_cnt:
         return 0
-
-    if x_win and o_cnt != x_cnt:
+    if all([board[c][c] == 'X' for c in range(3)]) and x_cnt < o_cnt:
         return 0
-
+    if all([board[2 - c][c] == 'O' for c in range(3)]) and x_cnt >= o_cnt:
+        return 0
+    if all([board[2 - c][c] == 'X' for c in range(3)]) and x_cnt < o_cnt:
+        return 0
+    
     return 1
-
-def win(board, t):
-    for row in board:
-        if row == [t, t, t]:
-            return True
-        
-    for col in range(3):
-        if [board[row][col] for row in range(3)] == [t, t, t]:
-            return True
-        
-    if [board[0][0], board[1][1], board[2][2]] == [t, t, t]:
-        return True
-    
-    if [board[2][0], board[1][1], board[0][2]] == [t, t, t]:
-        return True
-    
-    return False
