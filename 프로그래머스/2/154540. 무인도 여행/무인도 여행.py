@@ -1,38 +1,43 @@
 from collections import deque
 
 def solution(maps):
+    DIRS = [(1, 0), (-1, 0), (0, 1), (0, -1)]
     n = len(maps)
     m = len(maps[0])
     
-    visited = [[False] * m for _ in range(n)]
-    ans = []
+    answer = []
     
-    dr = [-1, 1, 0, 0]
-    dc = [0, 0, -1, 1]
-    
-    for i in range(n):
-        for j in range(m):
-            if maps[i][j] != 'X' and not visited[i][j]:
-                q = deque([(i, j)])
-                visited[i][j] = True
-                sum = int(maps[i][j])
-                
-                while q:
-                    r, c = q.popleft()
-                    
-                    for k in range(4):
-                        nr = r + dr[k]
-                        nc = c + dc[k]
-                        
-                        if 0 <= nr < n and 0 <= nc < m:
-                            if maps[nr][nc] != 'X' and not visited[nr][nc]:
-                                visited[nr][nc] = True
-                                sum += int(maps[nr][nc])
-                                q.append((nr, nc))
-                                
-                ans.append(sum)
-                
-    if not ans:
-        return [-1]
+    def bfs(sr, sc, visited):
+        q = deque()
         
-    return sorted(ans)
+        ret = int(maps[sr][sc])
+        visited[sr][sc] = True
+        q.append((sr, sc))
+        
+        while q:
+            r, c = q.popleft()
+            
+            for dr, dc in DIRS:
+                nr = dr + r
+                nc = dc + c
+                
+                if ((0 <= nr < n) and
+                    (0 <= nc < m) and
+                    (not visited[nr][nc]) and
+                    (maps[nr][nc] != 'X')):
+                        q.append((nr, nc))
+                        visited[nr][nc] = True
+                        ret += int(maps[nr][nc])
+                    
+        return ret
+    
+    ans = []
+    visited = [[False] * m for _ in range(n)]
+    for r in range(n):
+        for c in range(m):
+            if not visited[r][c] and maps[r][c] != 'X':
+                res = bfs(r, c, visited)
+                ans.append(res)
+        
+    
+    return [-1] if not ans else sorted(ans)
