@@ -1,24 +1,25 @@
 def solution(n, l, r):
-    return get(n, r) - get(n, l - 1)
+    def count(idx, depth):
+        if idx <= 0:
+            return 0
 
-def get(n, k):
-    if n == 0: 
-        return 1 if k > 0 else 0
+        if depth == 0:
+            return 1
 
-    l = 5 ** (n - 1)
-    one = 4 ** (n - 1)
+        total = 5 ** (depth - 1)
+        ones = 4 ** (depth - 1)
 
-    part = k // l
-    remain = k % l
+        calced = idx // total
+        rest = idx % total
 
-    if part < 2:
-        ret = part * one
-    elif part == 2:
-        ret = 2 * one
-    else:
-        ret = (part - 1) * one
+        if calced <= 2:
+            cnt = calced * ones
+        else:
+            cnt = (calced - 1) * ones
 
-    if part == 2:
-        return ret
-    else:
-        return ret + get(n - 1, remain)
+        if calced == 2:
+            return cnt
+
+        return cnt + count(rest, depth - 1)
+
+    return count(r, n) - count(l - 1, n)
