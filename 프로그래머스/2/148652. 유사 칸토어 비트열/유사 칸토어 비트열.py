@@ -1,25 +1,24 @@
 def solution(n, l, r):
-    def count(idx, depth):
-        if idx <= 0:
+    def count(to, depth):
+        if to == 0:
             return 0
-
+                    
         if depth == 0:
             return 1
-
-        total = 5 ** (depth - 1)
-        ones = 4 ** (depth - 1)
-
-        calced = idx // total
-        rest = idx % total
-
-        if calced <= 2:
-            cnt = calced * ones
+        
+        per_block_size = 5 ** (depth - 1)
+        per_block_once = 4 ** (depth - 1)
+        
+        block_pos = to // per_block_size
+        rest = to % per_block_size
+        if block_pos > 2:
+            ones = (block_pos - 1) * per_block_once
         else:
-            cnt = (calced - 1) * ones
+            ones = block_pos * per_block_once
+        
+        if block_pos % 5 == 2:
+            return ones
 
-        if calced == 2:
-            return cnt
-
-        return cnt + count(rest, depth - 1)
-
+        return ones + count(rest, depth - 1)
+    
     return count(r, n) - count(l - 1, n)
