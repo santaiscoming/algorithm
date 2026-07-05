@@ -1,36 +1,54 @@
-from collections import deque
+from collections import deque, defaultdict
 
 def solution(n, wires):
-    ans = n
+    m = len(wires)
+    ans = float('inf')
     
-    graph = [[] for _ in range(n + 1)]
-    for v1, v2 in wires:
-        graph[v1].append(v2)
-        graph[v2].append(v1)
+    for cut in range(m):
+        cand = []
+        graph = make(cut, wires)
+        visited = [False] * (n + 1)
         
-    for v1, v2 in wires:
-        cnt1 = bfs(v1, v1, v2, graph, n)
-        cnt2 = n - cnt1
+        for s in range(1, n + 1):
+            if not visited[s]:
+                cand.append(bfs(s, visited, graph))
         
-        ans = min(ans, abs(cnt1 - cnt2))
+        if len(cand) > 1:
+            ans = min(ans, abs(cand[0] - cand[1]))
+        
+        # print(cut, cand)
         
     return ans
 
-def bfs(start, v1, v2, graph, n):
-    visited = [False] * (n + 1)
-    q = deque([start])
+def make(cut, edges):
+    ret = defaultdict(list)
     
-    visited[start] = True
-    count = 1
+    for i, edge in enumerate(edges):
+        if i == cut:
+            continue
+        
+        u, v = edges[i]
+        ret[u].append(v)
+        ret[v].append(u)
+    
+    return ret
+        
+
+def bfs(s, visited, graph):
+    q = deque()
+    
+    visited[s] = True
+    q.append(s)
+    ret = 0
     
     while q:
         u = q.popleft()
+        
         for v in graph[u]:
-            if (u == v1 and v == v2) or (u == v2 and v == v1):
-                continue
             if not visited[v]:
-                visited[v] = True
                 q.append(v)
-                count += 1
+                visited[v] = True
+                ret += 1
                 
-    return count
+    return ret
+                
