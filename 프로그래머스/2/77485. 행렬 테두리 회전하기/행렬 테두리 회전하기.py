@@ -1,32 +1,31 @@
+from collections import deque
+
 def solution(rows, columns, queries):
+    for i in range(5, 1, -1):
+        print(i)
     ans = []
+    mat = [[0] * columns for _ in range(rows)]
+    for r in range(rows):
+        for c in range(columns):
+            mat[r][c] = (columns * r) + (c + 1)
     
-    mat = [[(r * columns) + c + 1 for c in range(columns)] for r in range(rows)]
-    
-    for x1, y1, x2, y2 in queries:
-        x1, y1, x2, y2 = x1 - 1, y1 - 1, x2 - 1, y2 - 1
+
+    for r1, c1, r2, c2 in queries:
+        r1, c1, r2, c2 = r1 - 1, c1 - 1, r2 - 1, c2 - 1
+        tmp = deque()
         
-        temp = mat[x1][y1]
-        min_v = temp
+        for c in range(c1, c2): tmp.append(mat[r1][c])
+        for r in range(r1, r2): tmp.append(mat[r][c2])
+        for c in range(c2, c1, -1): tmp.append(mat[r2][c])
+        for r in range(r2, r1, -1): tmp.append(mat[r][c1])
         
-        for k in range(x1, x2):
-            mat[k][y1] = mat[k+1][y1]
-            min_v = min(min_v, mat[k][y1])
-            
-        for k in range(y1, y2):
-            mat[x2][k] = mat[x2][k+1]
-            min_v = min(min_v, mat[x2][k])
-            
-        for k in range(x2, x1, -1):
-            mat[k][y2] = mat[k-1][y2]
-            min_v = min(min_v, mat[k][y2])
-            
-        for k in range(y2, y1, -1):
-            mat[x1][k] = mat[x1][k-1]
-            min_v = min(min_v, mat[x1][k])
-            
-        mat[x1][y1+1] = temp
+        ans.append(min(tmp))
+        tmp.rotate(1)
         
-        ans.append(min_v)
+        i = 0
+        for c in range(c1, c2): mat[r1][c] = tmp[i]; i += 1
+        for r in range(r1, r2): mat[r][c2] = tmp[i]; i += 1
+        for c in range(c2, c1, -1): mat[r2][c] = tmp[i]; i += 1
+        for r in range(r2, r1, -1): mat[r][c1] = tmp[i]; i += 1
         
     return ans
