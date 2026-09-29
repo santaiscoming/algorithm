@@ -1,55 +1,49 @@
 from collections import deque
 
 def solution(storage, requests):
-    dr = [-1, 1, 0, 0]
-    dc = [0, 0, -1, 1]
-    
     n = len(storage)
     m = len(storage[0])
+    DIRS = [[1, 0], [0, 1], [-1, 0], [0, -1]]
     
-    grid = [[' '] * (m + 2) for _ in range(n + 2)]
+    mat = [['.'] * (m + 2) for _ in range(n + 2)]
     for r in range(n):
         for c in range(m):
-            grid[r + 1][c + 1] = storage[r][c]
-            
+            mat[r + 1][c + 1] = storage[r][c]
 
-    
-    for req in requests:
-        target = req[0]
-        
-        if len(req) == 2:
-            for r in range(1, n + 1):
-                for c in range(1, m + 1):
-                    if grid[r][c] == target:
-                        grid[r][c] = ' '
-        else:
-            q = deque([(0, 0)])
-            visited = [[False] * (m + 2) for _ in range(n + 2)]
-            visited[0][0] = True
-            
-            remove = []
-            
-            while q:
-                r, c = q.popleft()
-                
-                for i in range(4):
-                    nr, nc = r + dr[i], c + dc[i]
-                    
-                    if 0 <= nr < n + 2 and 0 <= nc < m + 2 and not visited[nr][nc]:
-                        if grid[nr][nc] == ' ':
-                            visited[nr][nc] = True
-                            q.append((nr, nc))
-                        elif grid[nr][nc] == target:
-                            visited[nr][nc] = True
-                            remove.append((nr, nc))
-                            
-            for r, c in remove:
-                grid[r][c] = ' '
-                
     cnt = 0
-    for r in range(1, n + 1):
-        for c in range(1, m + 1):
-            if grid[r][c] != ' ':
+    for target in requests:
+        if len(target) == 2:
+            t = target[0]
+            for r in range(n + 2):
+                for c in range(m + 2):
+                    if mat[r][c] == t:
+                        mat[r][c] = '.'
+                        cnt += 1
+        else:
+            s = (0, 0)
+            q = deque()
+            q.append(s)
+            to_remove = []
+            visited = [[False] * (m + 2) for _ in range(n + 2)] 
+            visited[0][0] = False
+            while q:
+                cr, cc = q.popleft()
+
+                for dr, dc in DIRS:
+                    nr = cr + dr
+                    nc = cc + dc
+                    if (0 <= nr < n + 2 and
+                        0 <= nc < m + 2 and
+                        not visited[nr][nc]):
+                            if mat[nr][nc] == '.':
+                                q.append((nr, nc))
+                                visited[nr][nc] = True
+                            if mat[nr][nc] == target:
+                                to_remove.append((nr, nc))  
+                                visited[nr][nc] = True
+
+            for r, c in to_remove:
+                mat[r][c] = '.'
                 cnt += 1
-                
-    return cnt
+        
+    return n * m - cnt
